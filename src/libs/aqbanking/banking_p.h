@@ -76,6 +76,7 @@ struct AB_BANKING {
   GWEN_CONFIGMGR *configMgr;
 
   GWEN_DB_NODE *dbRuntimeConfig;
+  GWEN_DB_NODE *dbAppConfig;
 };
 
 

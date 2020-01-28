@@ -123,6 +123,7 @@ AB_BANKING *AB_Banking_new(const char *appName,
   ab->appName=strdup(appName);
   ab->cryptTokenList=GWEN_Crypt_Token_List2_new();
   ab->dbRuntimeConfig=GWEN_DB_Group_new("runtimeConfig");
+  ab->dbAppConfig = NULL;
 
   GWEN_Buffer_free(nbuf);
 
@@ -171,6 +172,7 @@ void AB_Banking_free(AB_BANKING *ab)
     AB_Banking_ClearCryptTokenList(ab);
     GWEN_Crypt_Token_List2_free(ab->cryptTokenList);
     GWEN_ConfigMgr_free(ab->configMgr);
+    GWEN_DB_Group_free(ab->dbAppConfig);
     free(ab->startFolder);
     free(ab->appName);
     free(ab->appEscName);
