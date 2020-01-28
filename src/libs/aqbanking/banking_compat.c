@@ -33,6 +33,10 @@ int AB_Banking_SetAccountSpecAlias(AB_BANKING *ab, const AB_ACCOUNT_SPEC *as, co
   }
   GWEN_DB_Group_free(dbConfig);
 
+  // delete read cache used by AB_Banking_GetAccountSpecByAlias
+  GWEN_DB_Group_free(ab->dbAppConfig);
+  ab->dbAppConfig = NULL;
+
   return 0;
 }
 
@@ -40,26 +44,24 @@ int AB_Banking_SetAccountSpecAlias(AB_BANKING *ab, const AB_ACCOUNT_SPEC *as, co
 
 AB_ACCOUNT_SPEC *AB_Banking_GetAccountSpecByAlias(AB_BANKING *ab, const char *alias)
 {
-  GWEN_DB_NODE *dbConfig=NULL;
   GWEN_DB_NODE *db;
   AB_ACCOUNT_SPEC *as=NULL;
   uint32_t aid;
   int rv;
 
-  rv=AB_Banking_ReadNamedConfigGroup(ab, AB_CFG_GROUP_APPS, ab->appName, 1, 1, &dbConfig);
-  if (rv<0) {
-    DBG_INFO(AQBANKING_LOGDOMAIN, "here (%d)", rv);
-    return NULL;
+  if (!ab->dbAppConfig) {
+    rv=AB_Banking_ReadNamedConfigGroup(ab, AB_CFG_GROUP_APPS, ab->appName, 1, 1, &ab->dbAppConfig);
+    if (rv<0) {
+      DBG_INFO(AQBANKING_LOGDOMAIN, "here (%d)", rv);
+      return NULL;
+    }
   }
-
-  db=GWEN_DB_GetGroup(dbConfig, GWEN_DB_FLAGS_DEFAULT, "banking/aliases");
+  db=GWEN_DB_GetGroup(ab->dbAppConfig, GWEN_DB_FLAGS_DEFAULT, "banking/aliases");
   aid=GWEN_DB_GetIntValue(db, alias, 0, 0);
   if (aid<1) {
     DBG_ERROR(AQBANKING_LOGDOMAIN, "No account id for alias \"%s\"", alias);
-    GWEN_DB_Group_free(dbConfig);
     return NULL;
   }
-  GWEN_DB_Group_free(dbConfig);
 
   rv=AB_Banking_GetAccountSpecByUniqueId(ab, aid, &as);
   if (rv<0) {
