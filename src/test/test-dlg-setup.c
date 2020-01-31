@@ -1,6 +1,6 @@
 #include <gwen-gui-gtk2/gtk2_gui.h>
 #include <aqbanking/banking.h>
-#include <aqbanking/dlg_setup.h>
+#include <aqbanking/dialogs/dlg_setup.h>
 #include <assert.h>
 
 int main(int argc, char **argv)
