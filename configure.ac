@@ -881,6 +881,18 @@ if test "$enable_fulldoc" = "yes"; then
         DOXYGEN_DEFINE=""
         DOXYGEN_FILE_PATTERNS="*.h *.hpp *.c *.cpp"
         DOXYGEN_EXCLUDE_PATTERNS=""
+        DOXYGEN_GENERATE_QHP="NO"
+        DOXYGEN_QHG_LOCATION=""
+        DOXYGEN_QHP_NAMESPACE=de.aquamaniac.aqbanking-$AQBANKING_VERSION_STRING
+        if which qhelpgenerator >/dev/null ; then
+            DOXYGEN_QHG_LOCATION=$(which qhelpgenerator)
+            DOXYGEN_GENERATE_QHP="YES"
+            USE_DOT=NO
+        elif which qhelpgenerator-qt5 >/dev/null ; then
+            DOXYGEN_QHG_LOCATION=$(which qhelpgenerator-qt5)
+            DOXYGEN_GENERATE_QHP="YES"
+            USE_DOT=NO
+        fi
 else
 	DOXYGEN_DEFINE="DOXYGEN_HIDE"
 	DOXYGEN_INPUT="listdoc.h \
@@ -911,6 +923,10 @@ AC_SUBST(DOXYGEN_INPUT)
 AC_SUBST(DOXYGEN_DEFINE)
 AC_SUBST(DOXYGEN_FILE_PATTERNS)
 AC_SUBST(DOXYGEN_EXCLUDE_PATTERNS)
+AC_SUBST(DOXYGEN_GENERATE_QHP)
+AC_SUBST(DOXYGEN_QHG_LOCATION)
+AC_SUBST(DOXYGEN_QHP_NAMESPACE)
+AC_SUBST(USE_DOT)
 AC_MSG_RESULT($enable_fulldoc)
 
 
