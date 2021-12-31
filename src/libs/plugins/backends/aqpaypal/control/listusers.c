@@ -88,12 +88,13 @@ int APY_Control_ListUsers(AB_PROVIDER *pro,
   u=AB_User_List_First(ul);
   while (u) {
     if (!xml) {
-      fprintf(stdout, "User %d: Bank: %s/%s User Id: %s Customer Id: %s Unique Id: %lu\n",
+      fprintf(stdout, "User %d: Bank: %s/%s User Id: %s Customer Id: %s Url: %s Unique Id: %lu\n",
               i++,
               AB_User_GetCountry(u),
               AB_User_GetBankCode(u),
               AB_User_GetUserId(u),
               AB_User_GetCustomerId(u),
+              APY_User_GetServerUrl(u),
               (unsigned long int) AB_User_GetUniqueId(u));
     }
     else {
@@ -109,6 +110,7 @@ int APY_Control_ListUsers(AB_PROVIDER *pro,
       fprintf(stdout, "    <BankCode>%s</BankCode>\n", AB_User_GetBankCode(u));
       fprintf(stdout, "    <Country>%s</Country>\n", AB_User_GetCountry(u));
       fprintf(stdout, "    <LastSessionId>%d</LastSessionId>\n", AB_User_GetLastSessionId(u));
+      fprintf(stdout, "    <ServerUrl>%s</ServerUrl>\n", APY_User_GetServerUrl(u));
       fprintf(stdout, "  </user>\n\n");
     }
     u=AB_User_List_Next(u);
