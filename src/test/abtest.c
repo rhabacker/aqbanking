@@ -1,17 +1,24 @@
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 
 
 
+#include <gwenhywfar/args.h>
 #include <gwenhywfar/logger.h>
 #include <gwenhywfar/db.h>
 #include <gwenhywfar/debug.h>
+#include <gwenhywfar/funcs.h>
 #include <gwenhywfar/xml.h>
 #include <gwenhywfar/text.h>
 #include <gwenhywfar/dbio.h>
 
 #include <aqbanking/banking.h>
 #include <aqbanking/banking_be.h>
+#include "aqbanking/i18n_l.h"
 #include <aqbanking/backendsupport/msgengine.h>
+#include <cli/helper.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -1145,46 +1152,70 @@ int test16(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
+  GWEN_DB_NODE *db;
+  const GWEN_ARGS args[]= {
+    {
+      GWEN_ARGS_FLAGS_HELP | GWEN_ARGS_FLAGS_LAST, /* flags */
+      GWEN_ArgsType_Int,             /* type */
+      "help",                       /* name */
+      0,                            /* minnum */
+      0,                            /* maxnum */
+      "h",                          /* short option */
+      "help",                       /* long option */
+      "Show this help screen",      /* short description */
+      "Show this help screen"       /* long description */
+    }
+  };
+  const GWEN_FUNCS funcs[] = {
+    GWEN_FUNCS_ENTRY_ARGS("test1", test1),
+    GWEN_FUNCS_ENTRY_ARGS("test3", test3),
+    GWEN_FUNCS_ENTRY_ARGS("test5", test5),
+    GWEN_FUNCS_ENTRY_ARGS("test6", test6),
+    GWEN_FUNCS_ENTRY_ARGS("test7", test7),
+    GWEN_FUNCS_ENTRY_ARGS("test8", test8),
+    GWEN_FUNCS_ENTRY_ARGS("test9", test9),
+    GWEN_FUNCS_ENTRY_ARGS("test10", test10),
+    GWEN_FUNCS_ENTRY_ARGS("test11", test11),
+    GWEN_FUNCS_ENTRY_ARGS("test12", test12),
+    GWEN_FUNCS_ENTRY_ARGS("test13", test13),
+    GWEN_FUNCS_ENTRY_ARGS("test15", test15),
+    GWEN_FUNCS_ENTRY_ARGS("test16", test16),
+    GWEN_FUNCS_ENTRY_END(),
+  };
   const char *cmd;
   int rv;
+  const GWEN_FUNCS *func;
+
+  AB_App_Set_Name(I18N("aqbanking test application"));
+
+  db=GWEN_DB_Group_new("arguments");
+  rv=AB_App_Handle_Args(argc, argv, args, db);
+  if (rv==GWEN_ARGS_RESULT_ERROR) {
+    return -1;
+  }
+  else if (rv==GWEN_ARGS_RESULT_HELP) {
+    GWEN_BUFFER *ubuf;
+
+    ubuf=GWEN_Buffer_new(0, 1024, 0, 1);
+    fprintf(stderr, "%s\n", I18N("\nCommands:\n\n"));
+    GWEN_Funcs_Usage_With_Help(funcs);
+    return 0;
+  }
 
   if (argc<2) {
     fprintf(stderr, "Usage: %s COMMAND\n", argv[0]);
     return 1;
   }
 
-  cmd=argv[1];
-
   GWEN_Logger_SetLevel(AQBANKING_LOGDOMAIN, GWEN_LoggerLevel_Info);
 
-  if (strcasecmp(cmd, "test1")==0)
-    rv=test1(argc, argv);
-  else if (strcasecmp(cmd, "test3")==0)
-    rv=test3(argc, argv);
-  else if (strcasecmp(cmd, "test5")==0)
-    rv=test5(argc, argv);
-  else if (strcasecmp(cmd, "test6")==0)
-    rv=test6(argc, argv);
-  else if (strcasecmp(cmd, "test7")==0)
-    rv=test7(argc, argv);
-  else if (strcasecmp(cmd, "test8")==0)
-    rv=test8(argc, argv);
-  else if (strcasecmp(cmd, "test9")==0)
-    rv=test9(argc, argv);
-  else if (strcasecmp(cmd, "test10")==0)
-    rv=test10(argc, argv);
-  else if (strcasecmp(cmd, "test11")==0)
-    rv=test11(argc, argv);
-  else if (strcasecmp(cmd, "test12")==0)
-    rv=test12(argc, argv);
-  else if (strcasecmp(cmd, "test13")==0)
-    rv=test13(argc, argv);
-  else if (strcasecmp(cmd, "test15")==0)
-    rv=test15(argc, argv);
-  else if (strcasecmp(cmd, "test16")==0)
-    rv=test16(argc, argv);
+  cmd=argv[1];
+  func=GWEN_Funcs_Find(funcs, cmd);
+  if (func!=NULL) {
+    rv=GWEN_Funcs_Call_Args(func, argc, argv);
+  }
   else {
-    fprintf(stderr, "Unknown command \"%s\"", cmd);
+    fprintf(stderr, "Unknown command \"%s\"\n", cmd);
     rv=1;
   }
 
