@@ -1,0 +1,224 @@
+<!-- ***************************************************************************
+ begin       : Sun Apr 11 2021
+ copyright   : (C) 2025 by Martin Preuss
+ email       : martin@libchipcard.de
+
+ ***************************************************************************
+ * This file is part of the project "AqBanking".                           *
+ * Please see toplevel file COPYING of that project for license details.   *
+ ***************************************************************************/
+
+  This is the dtd for gwbuild files, a build system that comes with libgwenhywfar,
+  see https://www.aquamaniac.de/rdm/projects/aqbanking/wiki/Gwbuild
+
+  It is not meant as a replacement for other build systems (like the currently used autotools, cmake etc.) but rather
+  as an addition created, maintained and used almost exclusively by myself.
+-->
+
+<!ENTITY % boolean "(TRUE|FALSE|true|false)"
+>
+
+<!ELEMENT gwbuild (project
+  | extradist
+  | i18n
+  | subdirs
+  | target+
+  | data
+  | (buildFiles, extradist))
+>
+
+<!ELEMENT project
+  ( define
+  | option
+  | checkfunctions
+  | checkheaders
+  | checklibs
+  | checkCompiler
+  | checkProgs
+  | dependencies
+  | ifVarMatches
+  | ifVarHasValue
+  | setVar
+  | writeFile
+  | subdirs
+  | extradist
+  )*
+>
+
+<!ATTLIST project
+    name         CDATA #REQUIRED
+    version      CDATA #REQUIRED
+    so_current   CDATA #IMPLIED
+    so_age       CDATA #IMPLIED
+    so_revision  CDATA #IMPLIED
+    write_config_h %boolean; #IMPLIED
+>
+
+<!ELEMENT dependencies (dep*, ifVarMatches*, ifVarHasValue*)>
+
+<!ELEMENT dep (variables*)>
+<!ATTLIST dep
+    id         CDATA #REQUIRED
+    name       CDATA #IMPLIED
+    minversion CDATA #IMPLIED
+    required   %boolean; #IMPLIED
+>
+
+<!ELEMENT ifVarHasValue (dep+)>
+<!ATTLIST ifVarHasValue
+    name  CDATA #REQUIRED
+    value CDATA #REQUIRED
+>
+
+<!ELEMENT ifVarMatches
+    (
+        (then, else?)
+      | define
+      | setVar
+      | dep
+      | buildFiles
+    )*
+>
+<!ATTLIST ifVarMatches
+    name         CDATA #REQUIRED
+    value        CDATA #REQUIRED
+>
+
+<!ELEMENT then (define | setVar | ifVarMatches | libraries)*>
+<!ELEMENT else (define | setVar | ifVarMatches | libraries)*>
+
+<!ELEMENT define EMPTY>
+<!ATTLIST define
+    name         CDATA #REQUIRED
+    value        CDATA #IMPLIED
+    quoted       %boolean; #IMPLIED
+>
+
+<!ELEMENT setVar (#PCDATA)>
+<!ATTLIST setVar
+    name         CDATA #REQUIRED
+>
+
+<!ELEMENT option ANY >
+<!ATTLIST option
+    id           CDATA #IMPLIED
+    type         CDATA #IMPLIED
+    definePrefix CDATA #IMPLIED
+>
+
+<!ELEMENT default ANY>
+<!ELEMENT choices ANY>
+<!ELEMENT alias (#PCDATA | variables | define | setVar )*>
+<!ATTLIST alias
+    name  CDATA #REQUIRED
+    value CDATA #IMPLIED
+>
+
+<!ELEMENT variables ANY>
+<!ELEMENT checklibs ANY>
+<!ELEMENT lib ANY>
+<!ATTLIST lib
+    id       CDATA #IMPLIED
+    name     CDATA #IMPLIED
+    function CDATA #IMPLIED
+>
+
+<!ELEMENT checkCompiler ANY>
+<!ELEMENT arg ANY>
+<!ATTLIST arg
+    name CDATA #IMPLIED
+>
+
+<!ELEMENT checkheaders ANY>
+<!ELEMENT checkfunctions ANY>
+<!ATTLIST checkfunctions
+    type CDATA #IMPLIED
+>
+
+<!ELEMENT checkProgs ANY>
+<!ELEMENT prog ANY>
+<!ATTLIST prog
+    id  CDATA #IMPLIED
+    cmd CDATA #IMPLIED
+>
+
+<!ELEMENT subdirs (#PCDATA)>
+<!ELEMENT extradist (#PCDATA)>
+<!ELEMENT writeFile EMPTY>
+<!ATTLIST writeFile
+    name CDATA #REQUIRED
+    install CDATA #IMPLIED
+>
+
+<!ELEMENT buildFiles (input, output, cmd, buildMessage)>
+<!ATTLIST buildFiles
+    name CDATA #IMPLIED
+    auto CDATA #IMPLIED
+>
+
+<!ELEMENT input (#PCDATA | files )*>
+<!ELEMENT files ANY>
+<!ATTLIST files
+    match CDATA #IMPLIED
+    deleteOutFileFirst CDATA #IMPLIED
+>
+
+<!ELEMENT output (#PCDATA)>
+<!ELEMENT cmd (#PCDATA)>
+<!ATTLIST cmd
+    tool CDATA #REQUIRED
+    checkDates %boolean; #IMPLIED
+    deleteOutFileFirst %boolean; #IMPLIED
+>
+
+<!ELEMENT buildMessage (#PCDATA)>
+<!ELEMENT i18n (#PCDATA)>
+
+<!ELEMENT target ANY >
+<!ATTLIST target
+          type CDATA #IMPLIED
+          name CDATA #IMPLIED
+          so_current CDATA #IMPLIED
+          so_age CDATA #IMPLIED
+          so_revision CDATA #IMPLIED
+          install CDATA #IMPLIED
+>
+
+<!ELEMENT includes ANY >
+<!ATTLIST includes
+          type CDATA #IMPLIED
+>
+
+<!ELEMENT headers ANY >
+<!ATTLIST headers
+          dist CDATA #IMPLIED
+          install CDATA #IMPLIED
+>
+
+<!ELEMENT sources ANY >
+<!ATTLIST sources
+>
+
+<!ELEMENT useTargets ANY >
+<!ATTLIST useTargets
+>
+
+<!ELEMENT libraries ANY >
+<!ATTLIST libraries
+          install CDATA #IMPLIED
+>
+
+<!ELEMENT data ANY >
+<!ATTLIST data
+          install CDATA #IMPLIED
+          DIST CDATA #IMPLIED
+          generated CDATA #IMPLIED
+          dist CDATA #IMPLIED
+>
+
+<!ELEMENT xdefine ANY >
+<!ATTLIST xdefine
+          name CDATA #IMPLIED
+          value CDATA #IMPLIED
+          quoted CDATA #IMPLIED
+>
