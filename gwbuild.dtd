@@ -174,7 +174,22 @@
 <!ELEMENT buildMessage (#PCDATA)>
 <!ELEMENT i18n (#PCDATA)>
 
-<!ELEMENT target ANY >
+<!ELEMENT target (buildFiles
+  | define
+  | data
+  | extradist
+  | headers
+  | ifVarMatches
+  | includes
+  | libraries
+  | setVar
+  | sources
+  | subdirs
+  | useTargets
+  | writeFile
+  | xdefine
+  )*
+>
 <!ATTLIST target
           type CDATA #IMPLIED
           name CDATA #IMPLIED
@@ -184,31 +199,31 @@
           install CDATA #IMPLIED
 >
 
-<!ELEMENT includes ANY >
+<!ELEMENT includes (#PCDATA) >
 <!ATTLIST includes
           type CDATA #IMPLIED
 >
 
-<!ELEMENT headers ANY >
+<!ELEMENT headers (#PCDATA) >
 <!ATTLIST headers
           dist CDATA #IMPLIED
           install CDATA #IMPLIED
 >
 
-<!ELEMENT sources ANY >
+<!ELEMENT sources (#PCDATA) >
 <!ATTLIST sources
 >
 
-<!ELEMENT useTargets ANY >
+<!ELEMENT useTargets (#PCDATA) >
 <!ATTLIST useTargets
 >
 
-<!ELEMENT libraries ANY >
+<!ELEMENT libraries (#PCDATA) >
 <!ATTLIST libraries
           install CDATA #IMPLIED
 >
 
-<!ELEMENT data ANY >
+<!ELEMENT data (#PCDATA) >
 <!ATTLIST data
           install CDATA #IMPLIED
           DIST CDATA #IMPLIED
@@ -216,7 +231,7 @@
           dist CDATA #IMPLIED
 >
 
-<!ELEMENT xdefine ANY >
+<!ELEMENT xdefine EMPTY >
 <!ATTLIST xdefine
           name CDATA #IMPLIED
           value CDATA #IMPLIED
