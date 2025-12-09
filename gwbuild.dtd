@@ -99,44 +99,44 @@
     name         CDATA #REQUIRED
 >
 
-<!ELEMENT option ANY >
+<!ELEMENT option (alias | choices | default)* >
 <!ATTLIST option
     id           CDATA #IMPLIED
     type         CDATA #IMPLIED
     definePrefix CDATA #IMPLIED
 >
 
-<!ELEMENT default ANY>
-<!ELEMENT choices ANY>
+<!ELEMENT default (#PCDATA) >
+<!ELEMENT choices (#PCDATA) >
 <!ELEMENT alias (#PCDATA | variables | define | setVar )*>
 <!ATTLIST alias
     name  CDATA #REQUIRED
     value CDATA #IMPLIED
 >
 
-<!ELEMENT variables ANY>
-<!ELEMENT checklibs ANY>
-<!ELEMENT lib ANY>
+<!ELEMENT variables (#PCDATA) >
+<!ELEMENT checklibs (lib)+ >
+<!ELEMENT lib EMPTY >
 <!ATTLIST lib
     id       CDATA #IMPLIED
     name     CDATA #IMPLIED
     function CDATA #IMPLIED
 >
 
-<!ELEMENT checkCompiler ANY>
-<!ELEMENT arg ANY>
+<!ELEMENT checkCompiler (arg | lib)* >
+<!ELEMENT arg (#PCDATA) >
 <!ATTLIST arg
     name CDATA #IMPLIED
 >
 
-<!ELEMENT checkheaders ANY>
-<!ELEMENT checkfunctions ANY>
+<!ELEMENT checkheaders (#PCDATA) >
+<!ELEMENT checkfunctions (#PCDATA) >
 <!ATTLIST checkfunctions
     type CDATA #IMPLIED
 >
 
-<!ELEMENT checkProgs ANY>
-<!ELEMENT prog ANY>
+<!ELEMENT checkProgs (prog)+ >
+<!ELEMENT prog EMPTY >
 <!ATTLIST prog
     id  CDATA #IMPLIED
     cmd CDATA #IMPLIED
