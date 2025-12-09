@@ -80,6 +80,7 @@ class GWBuildParser:
 
     def parse_arg(self, child):
         name = child.attrib.get('name')
+        self.parse_unhandled(child)
 
     def parse_buildFiles(self, child):
         name = child.attrib.get('name').replace('-', '_')
@@ -100,10 +101,11 @@ class GWBuildParser:
                 self.parse_unhandled(c)
 
     def parse_buildMessage(self, child):
-        self.print(f" # todo")
+        self.parse_unhandled(child)
 
     def parse_checkfunctions(self, child):
         type = child.attrib.get('type')
+        self.parse_unhandled(child)
 
     def parse_checkProgs(self, child):
         for c in child:
@@ -133,7 +135,7 @@ class GWBuildParser:
         generated = child.attrib.get('generated')
         dist = child.attrib.get('dist')
 
-    def parse_define(self, child):
+    def parse_define(self, child, target=''):
         name = ''
         if child.attrib.get('definePrefix') != None:
             name += child.attrib.get('definePrefix')
@@ -141,7 +143,10 @@ class GWBuildParser:
         value = self.parse_value(child.attrib.get('value'))
         if is_true(child, 'quoted'):
             value = '"' + value + '"'
-        self.set_var(name, value)
+        if target:
+            self.print(f"target_compile_options({target} PRIVATE {value})")
+        else:
+            self.set_var(name, value)
 
     def parse_dep(self, child):
         required = 'REQUIRED' if is_true(child, 'required') else ''
@@ -166,6 +171,9 @@ class GWBuildParser:
             else:
                 self.parse_unhandled(c)
 
+    def parse_extra_dist(self, child):
+        self.parse_unhandled(child)
+
     def parse_files(self, child, name='SOURCES'):
         files = child.text
         match = child.attrib.get('match')
@@ -178,19 +186,21 @@ class GWBuildParser:
             self.print(f"list(APPEND {name} {v})")
 
     def parse_gwbuild(self, child):
-        print("cmake_minimum_required(VERSION 3.10)")
-        print("set(CMAKE_CXX_STANDARD 11)")
-        print("set(CMAKE_C_STANDARD 99)")
         for c in child:
             tag = c.tag.lower()
             if tag in ('project'):
                 self.parse_project(c)
+            elif tag in ('subdirs'):
+                self.parse_subdirs(c)
+            elif tag in ('target'):
+                self.parse_target(c)
             else:
                 self.parse_unhandled(c)
 
-    def parse_headers(self, child):
+    def parse_headers(self, child, target=''):
         dist = child.attrib.get('dist')
         install = child.attrib.get('install')
+        self.parse_unhandled(child)
 
     def parse_if_var_has_values(self, child):
         name = child.attrib.get('name')
@@ -236,8 +246,16 @@ class GWBuildParser:
         self.level -= 1
         self.print(f"endif()")
 
-    def parse_includes(self, child):
+    def parse_includes(self, child, target=''):
         type = child.attrib.get('type')
+        if type in 'tm2':
+            self.parse_unhandled(child)
+        else:
+            if target:
+                self.print(f"target_include_directories({target} PRIVATE {self.parse_value(child.text.strip())})")
+            else:
+                self.print(f"include_directories({self.parse_value(child.text.strip())})")
+
 
     def parse_input(self, child, name='SOURCES'):
         files = child.text.strip()
@@ -254,9 +272,13 @@ class GWBuildParser:
         id = child.attrib.get('id')
         name = child.attrib.get('name')
         function = child.attrib.get('function')
+        self.parse_unhandled(child)
 
-    def parse_libraries(self, child):
+    def parse_libraries(self, child, target=''):
         install = child.attrib.get('install')
+        self.print(f"target_link_libraries({target} PRIVATE {self.parse_value(child.text)})")
+        if install:
+            self.parse_unhandled(child)
 
     def parse_option(self, child):
         name = child.attrib.get('id')
@@ -290,6 +312,9 @@ class GWBuildParser:
         self.set_var(name, value)
 
     def parse_project(self, child):
+        print("cmake_minimum_required(VERSION 3.10)")
+        print("set(CMAKE_CXX_STANDARD 11)")
+        print("set(CMAKE_C_STANDARD 99)")
         name = child.attrib.get('name')
         version = child.attrib.get('version')
         so_current = child.attrib.get('so_current')
@@ -318,9 +343,7 @@ class GWBuildParser:
             elif tag in ('option'):
                 self.parse_option(c)
             elif tag in ('subdirs'):
-                l = self.parse_text(c)
-                for i in l:
-                    self.print(f"add_subdirectory({i})")
+                self.parse_subdirs(c)
             elif tag in ('ifvarmatches'):
                 self.parse_if_var_matches(c)
             elif tag in ('ifvarhasvalues'):
@@ -338,11 +361,16 @@ class GWBuildParser:
         self.print(f"message(STATUS \"found {cmd} as {name}\")")
         self.set_var(id+'_EXISTS', name)
 
-    def parse_sources(self, child):
-        pass
-
     def parse_set_var(self, child):
         self.set_var(child.attrib.get('name').strip(), self.parse_value(child.text.strip()))
+
+    def parse_sources(self, child, target=''):
+        self.print(f"target_sources({target} PRIVATE {self.parse_value(child.text)})")
+
+    def parse_subdirs(self, child):
+        l = self.parse_text(child)
+        for i in l:
+            self.print(f"add_subdirectory({i})")
 
     def parse_text(self, child):
         l = [l.strip() for l in child.text.split()]
@@ -369,12 +397,51 @@ class GWBuildParser:
         so_age = child.attrib.get('so_age')
         so_revision = child.attrib.get('so_revision')
         install = child.attrib.get('install')
+        # ./gwenbuild-to-cmake.py:188 unhandled target {'type': 'InstallLibrary', 'name': 'aqbanking', 'so_current': '$(project_so_current)', 'so_age': '$(project_so_age)', 'so_revision': '$(project_so_revision)', 'install': '$(libdir)'}
+        if type in 'InstallLibrary':
+            self.print(f"add_library({name} SHARED)")
+        elif type in 'ConvenienceLibrary':
+            self.print(f"add_library({name})")
+        elif type in 'Module':
+            self.print(f"add_library({name} MODULE)")
+        else:
+            self.parse_unhandled(child)
+        if install:
+            self.print(f"install(TARGETS {name} DESTINATION {self.parse_value(install)})")
+        if so_revision:
+            self.print(f"set_target_properties({name} PROPERTIES SOVERSION {self.parse_value(so_revision)})")
+        for c in child:
+            tag = c.tag.lower()
+            if tag in ('define', name):
+                self.parse_define(c, name)
+            elif tag in ('extradist'):
+                self.parse_extra_dist(c)
+            elif tag in ('headers', name):
+                self.parse_headers(c, name)
+            elif tag in ('ifvarmatches'):
+                self.parse_if_var_matches(c)
+            elif tag in ('includes', name):
+                self.parse_includes(c, name)
+            elif tag in ('libraries', name):
+                self.parse_libraries(c, name)
+            elif tag in ('setvar'):
+                self.parse_set_var(c)
+            elif tag in ('sources'):
+                self.parse_sources(c, name)
+            elif tag in ('subdirs'):
+                self.parse_subdirs(c)
+            elif tag in ('usetargets'):
+                self.parse_useTargets(c, name)
+            else:
+                self.parse_unhandled(c)
+
+
 
     def parse_unhandled(self, child):
         self.print(f"# {getLineInfo()} unhandled {child.tag.lower()} {child.attrib}")
 
-    def parse_useTargets(self, child):
-        pass
+    def parse_useTargets(self, child, target=''):
+        self.parse_unhandled(child)
 
     def parse_value(self, v):
         if v == None:
@@ -413,47 +480,22 @@ class GWBuildParser:
         else:
             self.parse_unhandled(root)
 
+from glob import glob
+
 def main():
-    parser = argparse.ArgumentParser(description="Generate basic CMakeLists.txt from gwbuild/BUILD-like file")
-    parser.add_argument("input", help="input BUILD file (XML-like)")
+    parser = argparse.ArgumentParser(description="Generate CMakeLists.txt from gwbuild/BUILD-like file")
+    parser.add_argument('filenames', nargs='+', help='List of files to process')
     parser.add_argument("-o", "--out", default="generated_cmake", help="output directory")
     parser.add_argument("--project-name", default="GeneratedProject")
     args = parser.parse_args()
 
-    path = Path(args.input)
-    if not path.exists():
-        print("Input file not found:", path)
-        sys.exit(1)
-    gwbuildparser = GWBuildParser()
-    gwbuildparser.parse_file(path)
+    for filename in args.filenames:
+        path = Path(filename)
+        if not path.exists():
+            print("Input file not found:", path)
+            sys.exit(1)
+        gwbuildparser = GWBuildParser()
+        gwbuildparser.parse_file(path)
 
 if __name__ == "__main__":
     main()
-'''
-gen_path = Path("/mnt/data/generate_cmake.py")
-gen_path.write_text(generator_code)
-gen_path.chmod(0o755)
-print("\nWrote generator to:", gen_path)
-
-# Run the generator to create a sample output from the provided 0BUILD
-import subprocess, shlex, sys
-outdir = Path("/mnt/data/generated_from_0BUILD")
-cmd = f"python3 {gen_path} {build_path} -o {outdir}"
-print("Running:", cmd)
-proc = subprocess.run(shlex.split(cmd), capture_output=True, text=True)
-print("Return code:", proc.returncode)
-print("Stdout:\n", proc.stdout)
-print("Stderr:\n", proc.stderr)
-
-# Show produced top-level CMakeLists.txt
-sample_top = outdir / "CMakeLists.txt"
-if sample_top.exists():
-    print("\n===== Generated top-level CMakeLists.txt =====")
-    print(sample_top.read_text())
-    # write a separate file for easy download preview
-    preview = Path("/mnt/data/sample_CMakeLists_from_0BUILD.txt")
-    preview.write_text(sample_top.read_text())
-    print("\nWrote preview to:", preview)
-else:
-    print("No output generated.")
-'''
