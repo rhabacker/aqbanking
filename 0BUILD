@@ -136,7 +136,7 @@
         <setVar name="aqbanking_plugin_searchdir">lib/aqbanking/plugins/$(project_so_effective)</setVar>
         <setVar name="aqbanking_cfg_searchdir">etc</setVar>
         <setVar name="aqbanking_locale_searchdir">share/locale</setVar>
-        <setVar name="aqbanking_data_searchdir">share"</setVar>
+        <setVar name="aqbanking_data_searchdir">share</setVar>
         <setVar name="aqfints_datadir">share/aqbanking/backends/aqfints</setVar>
       </then>
       <else>
