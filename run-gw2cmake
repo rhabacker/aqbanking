@@ -1,0 +1,6 @@
+for i in $(find -name '0BUILD'); do
+    d=$(dirname $i)
+    ./gwenbuild-to-cmake.py $i > $d/CMakeLists.txt
+done
+sed -i 's,5.14,5.12,g' CMakeLists.txt
+cmake -B ../aqbanking-cmake-build
