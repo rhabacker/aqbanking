@@ -27,6 +27,11 @@ extern "C" {
 int AB_Cmd_Handle_Args(int argc, char **argv, const GWEN_ARGS *args, GWEN_DB_NODE *db);
 
 /**
+ * Sets the application name that is displayed at the top of the corresponding help page
+ */
+int AB_App_Set_Name(const char *name);
+
+/**
  * Processes arguments for a command line application
  * Upon request, the version and syntax of the command line and a list of available
  * arguments are output, or a message is output in case of an error.

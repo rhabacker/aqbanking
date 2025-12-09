@@ -40,7 +40,21 @@ int AB_Cmd_Handle_Args(int argc, char **argv, const GWEN_ARGS *args, GWEN_DB_NOD
   return rv;
 }
 
+static GWEN_BUFFER *_app_name = NULL;
 
+static void AB_App_Name_free()
+{
+  if (_app_name)
+    GWEN_Buffer_free(_app_name);
+}
+
+int AB_App_Set_Name(const char *name)
+{
+  AB_App_Name_free();
+  _app_name = GWEN_Buffer_new(0, 1024, 0, 1);
+  atexit(AB_App_Name_free);
+  return GWEN_Buffer_AppendString(_app_name, name);
+}
 
 int AB_App_Handle_Args(int argc, char **argv, const GWEN_ARGS *args, GWEN_DB_NODE *db)
 {
@@ -58,6 +72,11 @@ int AB_App_Handle_Args(int argc, char **argv, const GWEN_ARGS *args, GWEN_DB_NOD
     GWEN_BUFFER *ubuf;
 
     ubuf=GWEN_Buffer_new(0, 1024, 0, 1);
+    if (_app_name) {
+      GWEN_Buffer_AppendString(ubuf, GWEN_Buffer_GetStart(_app_name));
+      GWEN_Buffer_AppendString(ubuf, "\n");
+      AB_App_Name_free();
+    }
     GWEN_Buffer_AppendString(ubuf, I18N("This is version "));
     GWEN_Buffer_AppendString(ubuf, AQBANKING_VERSION_STRING "\n");
     GWEN_Buffer_AppendString(ubuf, I18N("Usage: "));
