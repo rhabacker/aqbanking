@@ -2,7 +2,7 @@
 
 <gwbuild>
 
-  <target type="ConvenienceLibrary" name="aqfints" >
+  <target type="ConvenienceLibrary" name="aqfintsplugin" >
 
     <includes type="c" >
       $(gmp_cflags)
