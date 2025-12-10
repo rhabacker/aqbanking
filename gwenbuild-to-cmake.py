@@ -214,7 +214,7 @@ class GWBuildParser:
         self.level -= 1
         self.print(f"endif()")
 
-    def parse_if_var_matches(self, child):
+    def parse_if_var_matches(self, child, target=''):
         if is_bool(child, 'value'):
             if is_true(child, 'value'):
                 self.print(f"if({child.attrib.get('name')})")
@@ -233,12 +233,12 @@ class GWBuildParser:
             elif tag in ('dep'):
                 self.parse_dep(c)
             elif tag in ('then'):
-                self.parse_then_else(c)
+                self.parse_then_else(c, target)
             elif tag in ('else'):
                 self.level -= 1
                 self.print(f"else()")
                 self.level += 1
-                self.parse_then_else(c)
+                self.parse_then_else(c, target)
             elif tag in ('buildfiles'):
                 self.parse_buildFiles(c)
             else:
@@ -312,9 +312,9 @@ class GWBuildParser:
         self.set_var(name, value)
 
     def parse_project(self, child):
-        print("cmake_minimum_required(VERSION 3.10)")
-        print("set(CMAKE_CXX_STANDARD 11)")
-        print("set(CMAKE_C_STANDARD 99)")
+        self.print("cmake_minimum_required(VERSION 3.10)")
+        self.print("set(CMAKE_CXX_STANDARD 11)")
+        self.print("set(CMAKE_C_STANDARD 99)")
         name = child.attrib.get('name')
         version = child.attrib.get('version')
         so_current = child.attrib.get('so_current')
@@ -376,17 +376,17 @@ class GWBuildParser:
         l = [l.strip() for l in child.text.split()]
         return l
 
-    def parse_then_else(self, child):
+    def parse_then_else(self, child, target=''):
         for c in child:
             tag = c.tag.lower()
             if tag in ('setvar'):
                 self.parse_set_var(c)
             elif tag in ('define'):
-                self.parse_define(c)
+                self.parse_define(c, target)
             elif tag in ('ifvarmatches'):
-                self.parse_if_var_matches(c)
+                self.parse_if_var_matches(c, target)
             elif tag in ('libraries'):
-                self.parse_libraries(c)
+                self.parse_libraries(c, target)
             else:
                 self.parse_unhandled(c)
 
@@ -404,12 +404,14 @@ class GWBuildParser:
             self.print(f"add_library({name})")
         elif type in 'Module':
             self.print(f"add_library({name} MODULE)")
+        elif type in 'Program':
+            self.print(f"add_executable({name})")
         else:
             self.parse_unhandled(child)
         if install:
             self.print(f"install(TARGETS {name} DESTINATION {self.parse_value(install)})")
         if so_revision:
-            self.print(f"set_target_properties({name} PROPERTIES SOVERSION {self.parse_value(so_revision)})")
+            self.print(f"set_target_properties({name} PROPERTIES SOVERSION \"{self.parse_value(so_revision)}\")")
         for c in child:
             tag = c.tag.lower()
             if tag in ('define', name):
@@ -419,7 +421,7 @@ class GWBuildParser:
             elif tag in ('headers', name):
                 self.parse_headers(c, name)
             elif tag in ('ifvarmatches'):
-                self.parse_if_var_matches(c)
+                self.parse_if_var_matches(c, name)
             elif tag in ('includes', name):
                 self.parse_includes(c, name)
             elif tag in ('libraries', name):
@@ -441,7 +443,7 @@ class GWBuildParser:
         self.print(f"# {getLineInfo()} unhandled {child.tag.lower()} {child.attrib}")
 
     def parse_useTargets(self, child, target=''):
-        self.parse_unhandled(child)
+        self.print(f"target_link_libraries({target} PRIVATE {self.parse_value(child.text)})")
 
     def parse_value(self, v):
         if v == None:
