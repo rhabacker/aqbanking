@@ -55,6 +55,9 @@ def getLineInfo():
 def debug(s):
     print(f"{getLineInfo()}{s}")
 
+def cmake_var(s, suffix=''):
+    return '${%s%s}' % (s, suffix)
+
 #
 # parse functions
 #
@@ -122,7 +125,7 @@ class GWBuildParser:
         args = child.text
         args = args.replace('INPUT[]', name_input)
         args = args.replace('OUTPUT[0]', name_output)
-        no = '${%s}' % name_output
+        no = cmake_var(name_output)
         self.print(f"add_custom_command(")
         self.print(f"    OUTPUT {no}")
         self.print(f"    COMMAND {self.parse_value(tool)} {self.parse_value(args)}")
@@ -149,9 +152,14 @@ class GWBuildParser:
             self.set_var(name, value)
 
     def parse_dep(self, child):
+        name = child.attrib.get('name')
         required = 'REQUIRED' if is_true(child, 'required') else ''
         version = child.attrib.get('minversion') if child.attrib.get('minversion') else ''
-        self.print(f"find_package({child.attrib.get('name')} {version} {required})")
+        self.print(f"find_package({name} {version} {required})")
+        self.print(f"if(NOT {name}_libs)")
+        self.set_var(name + '_cflags', cmake_var(name.upper(), '_INCLUDE_DIRS'))
+        self.set_var(name + '_libs', cmake_var(name.upper(), '_LIBRARIES'))
+        self.print(f"endif()")
         for c in child:
             tag = c.tag.lower()
             if tag in ('variables'):
@@ -182,7 +190,7 @@ class GWBuildParser:
             self.print(f"list(APPEND {name} {files})")
         else:
             self.print(f"file(GLOB {name}_FILES {match})")
-            v = '${%s_FILES}' % name
+            v = cmake_var(name, '_FILES')
             self.print(f"list(APPEND {name} {v})")
 
     def parse_gwbuild(self, child):
@@ -313,8 +321,8 @@ class GWBuildParser:
 
     def parse_project(self, child):
         self.print("cmake_minimum_required(VERSION 3.10)")
-        self.print("set(CMAKE_CXX_STANDARD 11)")
-        self.print("set(CMAKE_C_STANDARD 99)")
+        self.set_var('CMAKE_CXX_STANDARD', '11')
+        self.set_var('CMAKE_C_STANDARD', '99')
         name = child.attrib.get('name')
         version = child.attrib.get('version')
         so_current = child.attrib.get('so_current')
@@ -328,8 +336,8 @@ class GWBuildParser:
         self.set_var('project_vmajor', '${PROJECT_VERSION_MAJOR}')
         self.set_var('project_vminor', '${PROJECT_VERSION_NINOR}')
         self.set_var('project_vpatchlevel', '${PROJECT_VERSION_PATCH}')
-        if is_true(child, 'write_config_h'):
-            self.write_config_h = True
+        self.set_var('topsrcdir', '${CMAKE_SOURCE_DIR}')
+        self.set_var('topbuilddir', '${CMAKE_BINARY_DIR}')
         for c in child:
             tag = c.tag.lower()
             if tag in ('checkprogs'):
@@ -353,10 +361,23 @@ class GWBuildParser:
             else:
                 self.parse_unhandled(c)
 
+        if is_true(child, 'write_config_h'):
+            self.write_config_h = True
+            vb = cmake_var('CMAKE_BINARY_DIR') + '/config.h.cmake'
+            self.print("# generate config.h")
+            self.print("# TODO: add autotools support maybe from dbus project")
+            self.print("file(READ config.h.in config_vars)")
+            self.print(f"string(REPLACE \"#undef\" \"#cmakedefine\" config_vars {cmake_var('config_vars')})")
+            self.print(f"file(WRITE {vb} {cmake_var('config_vars')})")
+            self.print(f"configure_file({vb} config.h)")
+
+        self.print('include(FeatureSummary)')
+        self.print('feature_summary(WHAT ALL)')
+
     def parse_prog(self, child):
         id = child.attrib.get('id')
         cmd = child.attrib.get('cmd')
-        name = '${%s}' % id
+        name = cmake_var(id)
         self.print(f"find_program({id} NAMES {cmd})")
         self.print(f"message(STATUS \"found {cmd} as {name}\")")
         self.set_var(id+'_EXISTS', name)
@@ -449,7 +470,7 @@ class GWBuildParser:
         if v == None:
             return ''
         else:
-            return v.replace("$(","${").replace(")","}").replace("$$","$")
+            return v.replace('-I', '').replace("$(","${").replace(")","}").replace("$$","$")
 
     def parse_variables(self, child):
         l = child.text.split()
